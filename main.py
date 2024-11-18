@@ -10,33 +10,21 @@ def read_ddl_file(filename):
         return file.read()
 
 
-# Regular expression to parse each line of the DDL
-ddl_regex = re.compile(
-    r'\s*(\w+)\s+([a-zA-Z0-9\(\)]+)(,|(\s{2,})([a-zA-Z0-9]+ (\'.*\'|\d{1,})))')
-
-# Function to clean up the "other" details, removing trailing commas
-
-
-def clean_other(other):
-    # Remove trailing commas and unnecessary whitespace/newlines
-    return other.strip().rstrip(',')
-
-
-def remove_whitespace(text):
-    return re.sub(r'\s+', '', text)
-
-
 def convert_ddl_to_csv(ddl, output_filename):
     # CSV Header
     csv_data = [["fieldName", "dataType", "default", "other"]]
 
     # Extract field definitions from the DDL
     for line in ddl.split("\n"):
-
         formatted_line = re.split(r'\s{2,}', line.replace(',', ''))[1:]
-        print(formatted_line)
+        if re.match(r'^\).*', line):
+            print("Encountered End of Table, exit")
+            break
         if formatted_line:
-            csv_data.append(formatted_line)
+            if re.match(r'primary key', formatted_line[0].lower().strip()):
+                csv_data[-1] += formatted_line
+            else:
+                csv_data.append(formatted_line)
     # Write to CSV file
     with open(output_filename, mode="w", newline="") as file:
         writer = csv.writer(file)
